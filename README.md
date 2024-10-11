@@ -1,3 +1,41 @@
+# Concordia Contest Submission
+
+This repository is a fork of the Concordia repository.
+The original repository can be found [here](https://github.com/google-deepmind/concordia/).
+
+All development takes place in the [agent](concordia/factory/agent) directory.
+
+### Running the simulation
+
+To run the simulation, run the following command from the root directory of the repository:
+```sh
+PYTHONPATH=. PYTHONSAFEPATH=1 python examples/modular/launch_concordia_challenge_evaluation.py \
+--agent=AGENT_NAME \
+--api_type=API_TYPE \
+--model=MODEL_NAME \
+--embedder=EMBEDDER_NAME \
+--num_repetitions_per_scenario=NUM_REPETITIONS_PER_SCENARIO
+```
+e.g.
+```sh
+PYTHONPATH=. PYTHONSAFEPATH=1 python examples/modular/launch_concordia_challenge_evaluation.py \
+--agent=my_agent \
+--api_type=openai \
+--model=gpt-4o-mini \
+--embedder=all-mpnet-base-v2 \
+--num_repetitions_per_scenario=1
+```
+
+### Development
+
+First, create a conda environment with the required dependencies:
+```sh
+conda create --name concordia -y python
+conda activate concordia
+pip install -r https://raw.githubusercontent.com/google-deepmind/concordia/main/examples/requirements.txt
+pip install -e .
+```
+
 # Concordia
 
 *A library for generative social simulation*
