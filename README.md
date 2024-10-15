@@ -3,7 +3,7 @@
 This repository is a fork of the Concordia repository.
 The original repository can be found [here](https://github.com/google-deepmind/concordia/).
 
-All development takes place in the [agent](concordia/factory/agent) directory.
+The development is mixed with the original repository; each file is either entirely Concordia or entirely new code.
 
 ### Running the simulation
 

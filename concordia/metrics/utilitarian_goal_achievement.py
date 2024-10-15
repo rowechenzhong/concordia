@@ -137,16 +137,18 @@ class UtilitarianGoalAchievement(component.Component):
 
     # Construct the question asking the model to show its work
     question = (
-      f"We will now calculate the utility of a specific action. For example,"
+      f"We will now calculate the utility of a specific action. Example:"
       f"if you value gold at 100.0 dollars, apples at 2.5 dollars, and "
       f"potatoes at 3.0 dollars, "
-      f"and the numéraire is '{self._numeraire}', and your action is '{action}', "
+      f"and the numéraire is '{self._numeraire}', and your action is mine gold, "
       f"you might decide that the utility of mining gold is 100.0, so you would "
       f"write {{100.0}} in the response box. If your action was instead 'buy an "
       f"apple for 2.3 dollars,' you might decide that the utility of buying an "
       f"apple is 2.5, and you pay 2.3 dollars for it, so because 2.5 - 2.3 = 0.2, "
       f"you would write {{0.2}} in the response box.\n"
-      f"please calculate the utility of the action '{action}'.\n"
+      f"Your numéraire is '{self._numeraire}', and your grounding utilities are:\n"
+      f"{self._grounding_response}\n"
+      f"Please calculate the utility of the action '{action}'.\n"
       f"Show your work and return the final utility within double curly braces."
     )
     response = prompt.open_question(question=question)
@@ -160,7 +162,8 @@ class UtilitarianGoalAchievement(component.Component):
       utility_value = float(response[start + 2:end].strip())
       return utility_value
     else:
-      raise ValueError("Failed to extract utility value from response")
+      print("Failed to extract utility value from response.")
+      return 0.0
 
   def update_after_event(self, action: str) -> None:
     """Update utility after a specific action occurs."""
@@ -184,5 +187,5 @@ class UtilitarianGoalAchievement(component.Component):
     self._timestep += 1
 
   def state(self) -> str | None:
-    """Returns the current state of the component, including numéraire and grounding utilities."""
-    return f"Numéraire: {self._numeraire}, Grounding Utilities: {self._grounding_utilities}"
+    """Returns the current state of the component"""
+    return ''

@@ -1,4 +1,4 @@
-"""An Utilitarian Agent Factory."""
+"""An Agent Factory."""
 
 import datetime
 
@@ -16,7 +16,7 @@ def _get_class_name(object_: object) -> str:
   return object_.__class__.__name__
 
 
-def build_utilitarian_agent(
+def build_agent(
     *,
     config: formative_memories.AgentConfig,
     model: language_model.LanguageModel,
@@ -24,7 +24,7 @@ def build_utilitarian_agent(
     clock: game_clock.MultiIntervalClock,
     update_time_interval: datetime.timedelta,
 ) -> entity_agent_with_logging.EntityAgentWithLogging:
-  """Build a utilitarian agent.
+  """Build an agent.
 
   Args:
     config: The agent config to use.
@@ -85,17 +85,30 @@ def build_utilitarian_agent(
       logging_channel=measurements.get_channel('AllSimilarMemories').on_next,
   )
 
-  # Utilitarian agent components for available options and utility estimation
+  options_perception_components = {}
+  if config.goal:
+    goal_label = '\nOverarching goal'
+    overarching_goal = agent_components.constant.Constant(
+        state=config.goal,
+        pre_act_key=goal_label,
+        logging_channel=measurements.get_channel(goal_label).on_next)
+    options_perception_components[goal_label] = goal_label
+  else:
+    goal_label = None
+    overarching_goal = None
+
+  options_perception_components.update({
+      _get_class_name(observation): observation_label,
+      _get_class_name(observation_summary): observation_summary_label,
+      _get_class_name(relevant_memories): relevant_memories_label,
+  })
   options_perception_label = (
-      f'\nQuestion: Which options are available to {agent_name} right now?\nAnswer')
+      f'\nQuestion: Which options are available to {agent_name} '
+      'right now?\nAnswer')
   options_perception = (
       agent_components.question_of_recent_memories.AvailableOptionsPerception(
           model=model,
-          components={
-              _get_class_name(observation): observation_label,
-              _get_class_name(observation_summary): observation_summary_label,
-              _get_class_name(relevant_memories): relevant_memories_label,
-          },
+          components=options_perception_components,
           clock_now=clock.now,
           pre_act_key=options_perception_label,
           logging_channel=measurements.get_channel(
@@ -103,47 +116,40 @@ def build_utilitarian_agent(
           ).on_next,
       )
   )
-
-  # This component will ask for the utility of each available option
-  utility_perception_label = (
-      f'\nQuestion: What utility does {agent_name} gain from each option?\nAnswer')
-  utility_perception = (
-      agent_components.question_of_recent_memories.UtilityPerception(
+  best_option_perception_label = (
+      f'\nQuestion: Of the options available to {agent_name}, and '
+      'given their goal, which choice of action or strategy is '
+      f'best for {agent_name} to take right now?\nAnswer')
+  best_option_perception = {}
+  if config.goal:
+    best_option_perception[goal_label] = goal_label
+  best_option_perception.update({
+      _get_class_name(observation): observation_label,
+      _get_class_name(observation_summary): observation_summary_label,
+      _get_class_name(relevant_memories): relevant_memories_label,
+      _get_class_name(options_perception): options_perception_label,
+  })
+  best_option_perception = (
+      agent_components.question_of_recent_memories.BestOptionPerception(
           model=model,
-          components={
-              _get_class_name(options_perception): options_perception_label,
-              _get_class_name(observation_summary): observation_summary_label,
-              _get_class_name(relevant_memories): relevant_memories_label,
-          },
+          components=best_option_perception,
           clock_now=clock.now,
-          pre_act_key=utility_perception_label,
-          logging_channel=measurements.get_channel('UtilityPerception').on_next,
+          pre_act_key=best_option_perception_label,
+          logging_channel=measurements.get_channel(
+              'BestOptionPerception'
+          ).on_next,
       )
   )
 
-  # This component will select the action with the highest utility
-  argmax_action_label = (
-      f'\nQuestion: Which action has the highest utility for {agent_name}?\nAnswer')
-  argmax_action = agent_components.question_of_recent_memories.ArgmaxAction(
-      model=model,
-      components={
-          _get_class_name(utility_perception): utility_perception_label,
-      },
-      clock_now=clock.now,
-      pre_act_key=argmax_action_label,
-      logging_channel=measurements.get_channel('ArgmaxAction').on_next,
-  )
-
-  # Combine all the components
   entity_components = (
+      # Components that provide pre_act context.
       instructions,
       time_display,
       observation,
       observation_summary,
       relevant_memories,
       options_perception,
-      utility_perception,
-      argmax_action,
+      best_option_perception,
   )
   components_of_agent = {_get_class_name(component): component
                          for component in entity_components}
@@ -152,6 +158,10 @@ def build_utilitarian_agent(
           agent_components.memory_component.MemoryComponent(raw_memory))
 
   component_order = list(components_of_agent.keys())
+  if overarching_goal is not None:
+    components_of_agent[goal_label] = overarching_goal
+    # Place goal after the instructions.
+    component_order.insert(1, goal_label)
 
   act_component = agent_components.concat_act_component.ConcatActComponent(
       model=model,
