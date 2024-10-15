@@ -19,7 +19,7 @@ from concordia.utils import measurements as measurements_lib
 from concordia.utils import sampling
 from openai import AzureOpenAI, OpenAI
 from typing_extensions import override
-
+import time
 _MAX_MULTIPLE_CHOICE_ATTEMPTS = 20
 
 
@@ -50,6 +50,11 @@ class BaseGPTModel(language_model.LanguageModel):
         timeout: float = language_model.DEFAULT_TIMEOUT_SECONDS,
         seed: int | None = None,
     ) -> str:
+
+        time.sleep(0.01)
+        # TODO: This is here to enforce OpenAI's rate limit;
+        # remove this once we have a better solution.
+
         # Limit tokens to 4000 for GPT models
         max_tokens = min(max_tokens, 4000)
 
@@ -96,6 +101,11 @@ class BaseGPTModel(language_model.LanguageModel):
         *,
         seed: int | None = None,
     ) -> tuple[int, str, dict[str, float]]:
+
+
+        time.sleep(0.01)
+        # TODO: This is here to enforce OpenAI's rate limit;
+        # remove this once we have a better solution.
         prompt = (
             prompt
             + '\nRespond EXACTLY with one of the following strings:\n'

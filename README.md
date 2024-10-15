@@ -21,10 +21,20 @@ e.g.
 PYTHONPATH=. PYTHONSAFEPATH=1 python examples/modular/launch_concordia_challenge_evaluation.py \
 --agent=my_agent \
 --api_type=openai \
---model=gpt-4o-mini \
+--model=gpt-3.5-turbo \
 --embedder=all-mpnet-base-v2 \
 --num_repetitions_per_scenario=1
 ```
+or
+```sh
+PYTHONPATH=. PYTHONSAFEPATH=1 python examples/modular/launch_concordia_challenge_evaluation.py \
+--agent=my_agent \
+--api_type=together_ai \
+--model=google/gemma-2-27b-it \
+--embedder=all-mpnet-base-v2 \
+--num_repetitions_per_scenario=1
+```
+--model=gemini-1.5-flash-002 \
 
 ### Development
 
